@@ -25,24 +25,24 @@ export default function SemesterRegistration() {
     })
   );
   const onSubmit: SubmitHandler<FieldValues> = async (data) => {
-      const toastId = toast.loading("Creating Academic Semester....");
+    const toastId = toast.loading("Registering Semester....");
     const semesterData = {
       ...data,
       minCredit: Number(data.minCredit),
       maxCredit: Number(data.maxCredit),
     };
-    console.log(semesterData);
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const res = (await addSemester(semesterData)) as TResponse<any>;
-        console.log(res);
         if (res.data) {
           toast.success("Academic Semester Created Successfully", {
             id: toastId,
           });
         }
         if (res.error) {
-          toast.dismiss(toastId);
+          toast.error(res.error.data.message, {
+            id: toastId,
+          });
         }
       } catch (err) {
         toast.error("Something went wrong", {

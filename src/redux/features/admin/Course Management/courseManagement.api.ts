@@ -1,5 +1,5 @@
 import { baseApi } from "@/redux/api/baseApi";
-import { TQueryParams, TResponseRedux, TStudent } from "@/types";
+import { TQueryParams, TResponseRedux, TSemester } from "@/types";
 
 const courseManagementApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -18,7 +18,7 @@ const courseManagementApi = baseApi.injectEndpoints({
          };
        },
        providesTags: ["registered-semester"],
-       transformResponse: (response: TResponseRedux<TStudent[]>) => {
+       transformResponse: (response: TResponseRedux<TSemester[]>) => {
          return {
            data: response.data,
            meta: response.meta, 
