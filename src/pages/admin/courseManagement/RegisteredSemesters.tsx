@@ -1,35 +1,82 @@
-import { TQueryParams, TSemester } from "@/types";
-import { TAcademicSemester } from "@/types/academicManagement.type";
-import { Button, Table, TableColumnsType, TableProps } from "antd";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { TResponse, TSemester } from "@/types";
+import { Button, Dropdown, Table, TableColumnsType, Tag } from "antd";
 import { useState } from "react";
 import CreateAcademicSemesterModal from "@/components/modal/CreateAcademicSemesterModal";
-import EditAcademicSemesterModal from "@/components/modal/EditAcademicSemesterModal";
 import { alertModal } from "@/components/modal/alertModal";
 import { toast } from "sonner";
 import { academicManagementHooks } from "@/hooks/academicManagementHooks";
-import { useGetAllRegisteredSemesterQuery } from "@/redux/features/admin/Course Management/courseManagement.api";
+import {
+  useGetAllRegisteredSemesterQuery,
+  useUpdateRegisterSemesterMutation,
+} from "@/redux/features/admin/Course Management/courseManagement.api";
+import moment from "moment";
 
-export type TSemesterTableData = Pick<
-  TAcademicSemester,
-  "_id" | "name" | "year" | "startMonth" | "endMonth"
->;
+type TSemesterTableData = Pick<TSemester, "startDate" | "endDate" | "status">;
 
+const items = [
+  {
+    label: "Upcoming",
+    key: "UPCOMING",
+  },
+  {
+    label: "Ongoing",
+    key: "ONGOING",
+  },
+  {
+    label: "Ended",
+    key: "ENDED",
+  },
+];
 export default function RegisteredSemesters() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [record, setRecord] = useState<TSemesterTableData>();
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const {  useDeleteAcademicSemesterMutation } =
-    academicManagementHooks;
-  const { data: semesterData, isFetching } = useGetAllRegisteredSemesterQuery(undefined);
+  const [semesterId, setSemesterId] = useState("");
+  const { useDeleteAcademicSemesterMutation } = academicManagementHooks;
+  const { data: semesterData, isFetching } =
+    useGetAllRegisteredSemesterQuery(undefined);
+  const [updateSemesterStatus] = useUpdateRegisterSemesterMutation();
   const [deleteAcademicSemester] = useDeleteAcademicSemesterMutation();
 
   const tableData = semesterData?.data?.map((semester: TSemester) => ({
     key: semester._id,
     name: `${semester?.academicSemester?.name} ${semester?.academicSemester?.year}`,
-    startDate: semester.startDate,
-    endDate: semester.endDate,
+    startDate: moment(new Date(semester.startDate)).format("Do MMMM, YYYY"),
+    endDate: moment(new Date(semester.endDate)).format("Do MMMM, YYYY"),
     status: semester.status,
   }));
+
+  const handleStatusUpdate = async (value: any) => {
+    const toastId = toast.loading("Updating Semester Status....");
+    const updateData = {
+      id: semesterId,
+      data: {
+        status: value.key,
+      },
+    };
+    try {
+      const res = await updateSemesterStatus(updateData) as TResponse<any>;
+      if (res.data) {
+        toast.success("Semester Status Updated Successfully", {
+          id: toastId,
+        });
+      }
+      if (res.error) {
+        toast.error(res.error.data.message, {
+          id: toastId,
+        });
+      }
+    } catch (err) {
+      toast.error("Something went wrong", {
+        id: toastId,
+      });
+      console.log(err);
+    }
+  };
+
+  const menuProps = {
+    items,
+    onClick: handleStatusUpdate,
+  };
 
   const showAddModal = () => {
     setIsModalOpen(true);
@@ -59,11 +106,22 @@ export default function RegisteredSemesters() {
       title: "Name",
       dataIndex: "name",
       showSorterTooltip: { target: "full-header" },
-     
     },
     {
       title: "Status",
       dataIndex: "status",
+      render: (record) => {
+        let color;
+        if (record === "UPCOMING") {
+          color = "blue";
+        } else if (record === "ONGOING") {
+          color = "green";
+        } else {
+          color = "red";
+        }
+
+        return <Tag color={color}>{record}</Tag>;
+      },
     },
     {
       title: "Start Date",
@@ -76,15 +134,13 @@ export default function RegisteredSemesters() {
     {
       title: "Actions",
       render: (record) => {
-        const showEditModal = (record: TSemesterTableData) => () => {
-          setIsEditModalOpen(true);
-          setRecord(record);
-        };
         return (
           <div className="flex gap-2">
-            <Button onClick={showEditModal(record)} type="primary">
-              Edit
-            </Button>
+            <Dropdown menu={menuProps} trigger={["click"]}>
+              <Button type="primary" onClick={() => setSemesterId(record.key)}>
+                Update
+              </Button>
+            </Dropdown>
             <Button
               type="primary"
               danger
@@ -103,7 +159,6 @@ export default function RegisteredSemesters() {
       },
     },
   ];
-
 
   return (
     <div>
@@ -125,15 +180,6 @@ export default function RegisteredSemesters() {
           showModal={true}
           setIsModalOpen={setIsModalOpen}
         ></CreateAcademicSemesterModal>
-      ) : (
-        ""
-      )}
-      {isEditModalOpen && record ? (
-        <EditAcademicSemesterModal
-          record={record}
-          showModal={true}
-          setIsModalOpen={setIsEditModalOpen}
-        ></EditAcademicSemesterModal>
       ) : (
         ""
       )}

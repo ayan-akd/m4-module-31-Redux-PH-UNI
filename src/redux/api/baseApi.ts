@@ -62,7 +62,6 @@ export const baseApi = createApi({
     "academic-faculty",
     "academic-department",
     "registered-semester",
-    "building",
-    "room",
+    "course",
   ],
 });

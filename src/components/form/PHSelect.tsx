@@ -6,6 +6,7 @@ type TSelectProps = {
   name: string;
   options: { value: string; label: string; disabled?: boolean }[] | undefined;
   disabled?: boolean;
+  mode?: "multiple" | undefined;
 };
 
 export default function PHSelect({
@@ -13,6 +14,7 @@ export default function PHSelect({
   name,
   options,
   disabled,
+  mode
 }: TSelectProps) {
   return (
     <Controller
@@ -20,6 +22,7 @@ export default function PHSelect({
       render={({ field, fieldState: { error } }) => (
         <Form.Item label={label}>
           <Select
+            mode={mode}
             variant="filled"
             style={{ width: "100%" }}
             size="large"
